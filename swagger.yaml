@@ -1,0 +1,75 @@
+openapi: 3.0.0
+info:
+  title: Public API Cache Service
+  version: 1.0.0
+  description: API that fetches and caches data from PokéAPI
+
+servers:
+  - url: http://localhost:8080
+
+paths:
+  /items:
+    get:
+      summary: Get list of item IDs
+      description: Returns cached list of item IDs from external API
+      parameters:
+        - in: query
+          name: forceRefresh
+          schema:
+            type: boolean
+          required: false
+          description: Bypass cache and fetch fresh data
+      responses:
+        200:
+          description: List of item IDs
+          headers:
+            X-Cache:
+              description: Cache status (HIT or MISS)
+              schema:
+                type: string
+          content:
+            application/json:
+              example: [1, 2, 3, 4]
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              example:
+                error: Failed to fetch items
+
+  /items/{id}:
+    get:
+      summary: Get item details by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Item details
+          content:
+            application/json:
+              example:
+                id: 1
+                name: bulbasaur
+                description: seed
+        400:
+          description: Invalid ID
+          content:
+            application/json:
+              example:
+                error: Invalid ID
+        404:
+          description: Item not found
+          content:
+            application/json:
+              example:
+                error: Item not found
+        502:
+          description: External API failure
+          content:
+            application/json:
+              example:
+                error: External API failed
