@@ -42,7 +42,7 @@ Return      Fetch from API
 
 ---
 
-## 3. Caching Strategy
+## 3. Caching Strategies
 
 ### Approach
 
@@ -59,15 +59,24 @@ Return      Fetch from API
 * Cache expires after **60 seconds**
 * After expiration, next request triggers a refresh
 
+### SWR (Stale While Revalidate)
+
+* When cached data exists, it is returned immediately even if stale.
+* If the cache is stale, the system refreshes data asynchronously in the background.
+* The external API is only awaited when no cached data exists.
+
 ---
 
 ## 4. Cache Behavior
 
 ### Cache Hit
-
-* Data is returned immediately
-* No external API call is made
-* Response header: `X-Cache: HIT`
+* TTL:
+    * Data is returned immediately
+    * No external API call is made
+    * Response header: `X-Cache: HIT`
+* SWR:
+    * Fresh Cache Hit: Data is returned immediately without external API call.
+    * Stale Cache Hit: Stale cached data is returned immediately while a background refresh is triggered.
 
 ### Cache Miss
 
@@ -77,49 +86,31 @@ Return      Fetch from API
 
 ---
 
-## 5. Cache Staleness
-
-The system allows **stale data within the TTL window**.
-
-This means:
-
-* Cached data may be slightly outdated
-* Fresh data is fetched only after expiration
-
-### Tradeoff
-
-* ✅ Faster responses
-* ✅ Reduced API calls
-* ❌ Data may not be real-time
-
----
-
-## 6. New Data Discovery
+## 5. New Data Discovery
 
 New items added to the external API are discovered when:
-
-* Cache expires
-* A fresh API request is triggered
-
-This ensures **eventual consistency**.
+* TTL: Cache expires
+* SWR: happens automatically when stale cache is accessed.
 
 ---
 
-## 7. Cache Stampede Prevention
+## 6. Cache Stampede Prevention
 
 To prevent multiple simultaneous API calls:
 
 * A shared `promise` is stored during fetch
 * If another request arrives:
 
-  * It waits for the same promise instead of triggering a new call
-
-This ensures:
-
-* Only **one API request** is made
-* Other requests reuse the result
+  * TTL: It waits for the same promise instead of triggering a new API call
+  * SWR: 
+    * If no cached data exists, concurrent requests await the same promise.
+    * If stale data exists, return stale cache while refresh occurs in background.
 
 ---
+
+## 7. TTL vs SWR:
+* SWR has faster response times and reduces latency spikes after cache expiration
+* However, SWR returns stale data during refresh window, which is not the case with TTL
 
 ## 8. Force Refresh
 
@@ -143,10 +134,6 @@ Behavior:
 
 * Request returns an error response
 * Cache is not updated
-
-### Improvement Opportunity
-
-* Serve stale data if refresh fails (fallback strategy)
 
 ---
 
@@ -196,6 +183,6 @@ Recommended additions:
 
 ## 14. Design Decisions Summary
 
-* Chose TTL-based caching for simplicity and reliability
+* Chose TTL-based caching for simplicity, and SWR to reduce latency
 * Accepted temporary staleness for performance gains
 * Used shared promise to handle concurrency

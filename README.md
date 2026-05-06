@@ -15,7 +15,7 @@ This project is a backend service that fetches data from a public API (PokéAPI)
 
 * Fetch list of items with pagination support
 * Fetch individual item details by ID
-* In-memory caching with TTL
+* In-memory caching with TTL and SWR
 * Cache hit/miss tracking via response headers
 * Cache stampede prevention (shared promise)
 * Optional cache bypass (`forceRefresh`)
@@ -35,12 +35,15 @@ Returns a list of item IDs.
 
 * `forceRefresh=true` (optional)
   Bypass cache and fetch fresh data from external API
+* `swr=true` (optional)
+  Activate SWR-based cache strategy, while having no query parameters or setting swr=false activates TTL-based cache strategy
 
 #### Example Request
 
 ```bash
 GET http://localhost:8080/items
 GET http://localhost:8080/items?forceRefresh=true
+GET http://localhost:8080/items?swr=true
 ```
 
 #### Example Response
@@ -177,11 +180,22 @@ PORT=8080
 
 ## Caching Behavior
 
-* Data is cached for 60 seconds (TTL)
-* First request → cache MISS → fetch from API
-* Subsequent requests → cache HIT
-* Cache refreshes after expiration
-* `forceRefresh=true` bypasses cache
+* TTL:
+    * Data is cached for 60 seconds (TTL)
+    * First request → cache MISS → fetch from API
+    * Subsequent requests → cache HIT
+    * Cache refreshes after expiration
+    * `forceRefresh=true` bypasses cache
+* SWR: 
+    * Cached data is returned immediately, even if stale
+        * First request with empty cache → cache MISS → fetch from API
+        * Subsequent requests → cache HIT
+        * When cache becomes stale:
+            * stale data is still returned to clients
+            * background refresh is triggered asynchronously
+        * Concurrent stale requests reuse the same refresh promise to prevent duplicate API calls
+        * Users receive stale data during the refresh window
+        * `forceRefresh=true` bypasses cache and forces immediate refresh
 
 ---
 
@@ -208,7 +222,7 @@ PORT=8080
 
 * Most confident:
 
-  * caching strategy
+  * caching strategies
   * API design
 
 * Least confident:

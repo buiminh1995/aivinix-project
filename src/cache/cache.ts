@@ -28,9 +28,9 @@ export const createCache = <T>() => { //factory function, remember cache by clos
     }
 
     return {     
-                                                // return {
+                                                   // return {
         async getTTL(fetcher: () => Promise<T>) {  //     getTTL: async function (fetcher) { }
-        const now = Date.now();               // }
+        const now = Date.now();                    // }
 
             // HIT
             if (cache.data && cache.expiry > now) {
@@ -43,31 +43,34 @@ export const createCache = <T>() => { //factory function, remember cache by clos
                 return { data, hit: false };
             }
 
-            // if there is no cache and cache is not refreshing => time to get data from external API 
+            // if no cache or cached expired and not refreshing -> start refresh
             startRefresh(fetcher);
 
-            const data = await cache.promise; //return promise for current request
+            const data = await cache.promise; 
 
-            return { data, hit: false };
+            return { data, hit: false }; //return promise to current request
         },
 
         async getSWR(fetcher: () => Promise<T>) { 
             const now = Date.now();               
 
             if (cache.data && (cache.expiry > now || cache.expiry === now)) { //fresh
+                console.log('fresh cache')
                 return { data: cache.data, hit: true };
             }
             if (cache.data && cache.expiry < now) { //stale
-                if (cache.isRefreshing && cache.promise) {
+                console.log('stale cache')
+                if (cache.isRefreshing && cache.promise) { // if during refresh, still give client stale cache
                     return { data: cache.data, hit: false };
                 }
-                startRefresh(fetcher);
-                return { data: cache.data, hit: true };
+                startRefresh(fetcher); // if no refresh, start refresh
+                return { data: cache.data, hit: true }; // while returning stale cache
             }
             else{ //no cache at all
+                console.log('no cache at all')
                 startRefresh(fetcher); 
-                const data = await cache.promise; // no data in cache yet, must wait for promise
-                return { data, hit: false };
+                const data = await cache.promise; // no data in cache yet, all requests wait for catch.promise
+                return { data, hit: false }; // return promise to all awaiting requests
             }
         }
     };
