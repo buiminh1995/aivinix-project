@@ -27,48 +27,48 @@ export const createCache = <T>() => { //factory function, remember cache by clos
         });
     }
 
-  return {     
-                                             // return {
-    async getTTL(fetcher: () => Promise<T>) {  //     getTTL: async function (fetcher) { }
-      const now = Date.now();               // }
+    return {     
+                                                // return {
+        async getTTL(fetcher: () => Promise<T>) {  //     getTTL: async function (fetcher) { }
+        const now = Date.now();               // }
 
-      // HIT
-      if (cache.data && cache.expiry > now) {
-        return { data: cache.data, hit: true };
-      }
-
-      // Prevent stampede
-      if (cache.isRefreshing && cache.promise) {
-        const data = await cache.promise;
-        return { data, hit: false };
-      }
-
-      // if there is no cache and cache is not refreshing => time to get data from external API 
-      startRefresh(fetcher);
-
-      const data = await cache.promise; //return promise for current request
-
-      return { data, hit: false };
-    },
-
-    async getSWR(fetcher: () => Promise<T>) { 
-        const now = Date.now();               
-
-        if (cache.data && cache.expiry > now) {
-            return { data: cache.data, hit: true };
-        }
-        if (cache.data && cache.expiry < now) {
-            if (cache.isRefreshing && cache.promise) {
-                return { data: cache.data, hit: false };
+            // HIT
+            if (cache.data && cache.expiry > now) {
+                return { data: cache.data, hit: true };
             }
+
+            // Prevent stampede
+            if (cache.isRefreshing && cache.promise) {
+                const data = await cache.promise;
+                return { data, hit: false };
+            }
+
+            // if there is no cache and cache is not refreshing => time to get data from external API 
             startRefresh(fetcher);
-            return { data: cache.data, hit: true };
-        }
-        if (!cache.data){
-            startRefresh(fetcher); 
-            const data = await cache.promise; // no data yet, must wait for promise
+
+            const data = await cache.promise; //return promise for current request
+
             return { data, hit: false };
+        },
+
+        async getSWR(fetcher: () => Promise<T>) { 
+            const now = Date.now();               
+
+            if (cache.data && (cache.expiry > now || cache.expiry === now)) { //fresh
+                return { data: cache.data, hit: true };
+            }
+            if (cache.data && cache.expiry < now) { //stale
+                if (cache.isRefreshing && cache.promise) {
+                    return { data: cache.data, hit: false };
+                }
+                startRefresh(fetcher);
+                return { data: cache.data, hit: true };
+            }
+            else{ //no cache at all
+                startRefresh(fetcher); 
+                const data = await cache.promise; // no data in cache yet, must wait for promise
+                return { data, hit: false };
+            }
         }
-    }
-  };
+    };
 };
