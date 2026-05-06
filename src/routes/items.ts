@@ -6,8 +6,9 @@ const router = express.Router();
 router.get("/", async (req, res) => {
   try {
     const forceRefresh = req.query.forceRefresh === "true";
+    const staleWhileRevalidate = req.query.swr === "true";
 
-    const { data, hit } = await getItems(forceRefresh);
+    const { data, hit } = await getItems(forceRefresh, staleWhileRevalidate);
 
     res.setHeader("X-Cache", hit ? "HIT" : "MISS");
 

@@ -1,9 +1,9 @@
 import { createCache } from "../cache/cache";
 import { fetchAllPokemon, fetchPokemonById } from "../clients/pokeClient";
 
-const cache = createCache<number[]>();
+const cache = createCache<number[]>(); // cache = { get: async function(...) { ... } }
 
-export const getItems = async (forceRefresh = false) => {
+export const getItems = async (forceRefresh = false, staleWhileRevalidate = false) => {
     if (forceRefresh) {
         const data = await fetchAllPokemon();
         console.log(data)
@@ -12,7 +12,15 @@ export const getItems = async (forceRefresh = false) => {
             hit: false
         };
     }
-    return cache.get(async () => {
+
+    if(staleWhileRevalidate){
+        return cache.getSWR(async () => {
+        const data = await fetchAllPokemon();
+        return data.map((_, i) => i + 1);
+    });
+    }
+
+    return cache.getTTL(async () => {
     const data = await fetchAllPokemon();
     return data.map((_, i) => i + 1);
     });
