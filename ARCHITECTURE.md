@@ -76,13 +76,14 @@ Return      Fetch from API
     * Response header: `X-Cache: HIT`
 * SWR:
     * Fresh Cache Hit: Data is returned immediately without external API call.
-    * Stale Cache Hit: Stale cached data is returned immediately while a background refresh is triggered.
+    * Stale Cache Hit: Stale cached data is returned immediately while external API refresh is triggered.
+    * Response header: `X-Cache: HIT`
 
 ### Cache Miss
-
-* Data is fetched from external API
-* Cache is updated
-* Response header: `X-Cache: MISS`
+* TTL (stale cache and no cache) and SWR (no cache):
+  * Data is fetched from external API
+  * Cache is updated
+  * Response header: `X-Cache: MISS`
 
 ---
 

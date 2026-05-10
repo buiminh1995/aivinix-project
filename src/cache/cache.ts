@@ -5,7 +5,7 @@ type Cache<T> = {
   promise?: Promise<T>;
 };
 
-const TTL = 60 * 1000;
+const TTL = 10 * 1000;
 
 export const createCache = <T>() => { //factory function, remember cache by closure
     let cache: Cache<T> = {
@@ -27,7 +27,7 @@ export const createCache = <T>() => { //factory function, remember cache by clos
         });
     }
 
-    return {     
+    return { // return object with two methods: getTTL and getSWR  
                                                    // return {
         async getTTL(fetcher: () => Promise<T>) {  //     getTTL: async function (fetcher) { }
         const now = Date.now();                    // }
