@@ -5,7 +5,7 @@ type Cache<T> = {
   promise?: Promise<T>;
 };
 
-const TTL = 10 * 1000;
+const TTL = parseInt(process.env.TTL || '20') * 1000;
 
 export const createCache = <T>() => { //factory function, remember cache by closure
     let cache: Cache<T> = {
